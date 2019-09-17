@@ -1,6 +1,6 @@
 # Bevolkingsregisters 1851-1893
 
-|License |                                                                                                                                                   |
+| License     |                                                                                                                                                   |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Source code | [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)                                       |
 | Data        | [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/) |
@@ -18,7 +18,12 @@ De data kan gedownload worden van de [Open Datapagina](https://www.amsterdam.nl/
 
 ## Conversie naar RDF
 
-De data is geconverteerd naar RDF volgens [roar](https://w3id.org/roar).
+De data uit de index zijn geconverteerd naar RDF volgens [roar](https://w3id.org/roar). 
+
+### Endpoint
+
+Sparql-endpoint via [druid](https://druid.datalegend.net/LvanWissen/Bevolkingsregisters).
+
 
 ## Contact
 
