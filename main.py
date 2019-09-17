@@ -152,6 +152,9 @@ def parsexml(xmlfile):
     # For backref
     g_void = create.term(indexName)
 
+    # And the graph itself
+    g = rdfSubject.db = ds.graph(identifier=create.term(indexName))
+
     # Bind prefixes
     ds.bind('saa', saa)
     ds.bind('saaRec', saaRec)
