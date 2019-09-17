@@ -154,19 +154,19 @@ def parsexml(xmlfile):
 
     if '1851-1853' in indexName:
         earliestBeginTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
-        LatestBeginTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
+        latestBeginTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
     elif '1853-1863' in indexName:
         earliestBeginTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
-        LatestBeginTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
+        latestBeginTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
     elif '1874-1893' in indexName:
         earliestBeginTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
-        LatestBeginTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
+        latestBeginTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
@@ -248,7 +248,7 @@ def parsexml(xmlfile):
                     value=p,
                     role="resident",
                     hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
-                    hasLatestBeginTimeStamp=latestEndTimeStamp,
+                    hasLatestBeginTimeStamp=latestBeginTimeStamp,
                     hasEarliestEndTimeStamp=earliestEndTimeStamp,
                     hasLatestEndTimeStamp=latestEndTimeStamp)
             ]
@@ -257,13 +257,15 @@ def parsexml(xmlfile):
                 value=loc,
                 role="home location",
                 hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
-                hasLatestBeginTimeStamp=latestEndTimeStamp,
+                hasLatestBeginTimeStamp=latestBeginTimeStamp,
                 hasEarliestEndTimeStamp=earliestEndTimeStamp,
                 hasLatestEndTimeStamp=latestEndTimeStamp)
 
             if place:
                 p.hasLocation = [
-                    StructuredValue(value=place, role="birthplace"),
+                    StructuredValue(value=place,
+                                    role="birthplace",
+                                    hasTimeStamp=birth.hasTimeStamp),
                     homeLocation
                 ]
             else:
@@ -294,11 +296,9 @@ def parsexml(xmlfile):
             r.mentionsRegistered = [p]
 
             if type(record['urlScan']) == list:
-                r.urlScan = [URIRef(i) for i in record['urlScan']]
+                r.onScan = [URIRef(i) for i in record['urlScan']]
             elif record['urlScan'] is not None:
-                r.urlScan = [URIRef(record['urlScan'])]
-
-            r.onScan = r.urlScan  # already a list
+                r.onScan = [URIRef(record['urlScan'])]
 
         print(f"Writing the graph to: {targetfile}")
         sys.stdout.flush()
