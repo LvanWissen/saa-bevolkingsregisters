@@ -123,17 +123,34 @@ def parsexml(xmlfile):
                               f.replace('.xml', '.trig'))
 
     ds = Dataset()
-    ds_void = VoidDataset(ds,
-                          title="Archief van het Bevolkingsregister",
-                          label=["Archief van het Bevolkingsregister"])
 
-    g = rdfSubject.db = ds.graph(identifier=create.term(indexName))
-    g_void = VoidDataset(create.term(indexName),
-                         title=indexName,
-                         description=f"RDF conversion of {indexName}",
-                         label=[f"RDF conversion of {indexName}"])
+    # The graph
+    ds.add((create.term(indexName), RDF.type, void.Dataset))
+    ds.add((create.term(indexName), dcterms.title, Literal(indexName)))
+    ds.add((create.term(indexName), dcterms.modified,
+            Literal(datetime.now().strftime('%Y-%m-%d'), datatype=XSD.date)))
+    ds.add((create.term(indexName), dcterms.description,
+            Literal(f"RDF conversion of {indexName}")))
 
-    ds_void.subset = [g_void]
+    # The dataset
+    ds.add((URIRef(
+        "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
+            RDF.type, void.Dataset))
+    ds.add((URIRef(
+        "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
+            dcterms.title, Literal("Archief van het Bevolkingsregister")))
+    ds.add((URIRef(
+        "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
+            dcterms.modified,
+            Literal(datetime.now().strftime('%Y-%m-%d'), datatype=XSD.date)))
+
+    # Subset
+    ds.add((URIRef(
+        "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
+            void.subset, create.term(indexName)))
+
+    # For backref
+    g_void = create.term(indexName)
 
     # Bind prefixes
     ds.bind('saa', saa)
