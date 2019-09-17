@@ -98,7 +98,7 @@ def xml2rdf(datafolder, trigfolder):
     #     parsexml(f)
 
     # with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-    with multiprocessing.Pool(processes=3) as pool:
+    with multiprocessing.Pool(processes=2) as pool:
         _ = pool.map(parsexml, xmlfiles)
 
 
@@ -115,9 +115,9 @@ def parsexml(xmlfile):
 
     xmlfile = os.path.join(root, f)
 
-    if not xmlfile.endswith(
-            'SAA_Index_op_bevolkingsregister_1851-1853_20181004_001.xml'):
-        return
+    # if not xmlfile.endswith(
+    #         'SAA_Index_op_bevolkingsregister_1851-1853_20181004_001.xml'):
+    #     return
 
     targetfile = os.path.join(trigfolder, indexName,
                               f.replace('.xml', '.trig'))
