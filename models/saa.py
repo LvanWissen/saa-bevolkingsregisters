@@ -19,6 +19,8 @@ dcterms = Namespace("http://purl.org/dc/terms/")
 AS = Namespace("http://www.w3.org/ns/activitystreams#")
 oa = Namespace("http://www.w3.org/ns/oa#")
 
+void = Namespace("https://www.w3.org/TR/void/")
+
 foaf = Namespace("http://xmlns.com/foaf/0.1/")
 
 prov = Namespace("http://www.w3.org/ns/prov#")
@@ -48,6 +50,20 @@ saaOccupation = Namespace(
 saaRole = Namespace(
     "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Role/")
 
+# Void
+
+
+class VoidDataset(rdfSubject):
+    rdf_type = void.Dataset
+
+    subset = rdfMultiple(void.subset)
+
+    title = rdfSingle(dcterms.title)
+    description = rdfSingle(dcterms.description)
+
+    label = rdfMultiple(RDFS.label)
+
+
 #############
 # SAA Index #
 #############
@@ -61,6 +77,12 @@ class Entity(rdfSubject):
     wasDerivedFrom = rdfMultiple(prov.wasDerivedFrom)
     qualifiedDerivation = rdfSingle(prov.qualifiedDerivation,
                                     range_type=prov.Derivation)
+
+    inDataset = rdfSingle(void.inDataset)
+
+    hasLocation = rdfMultiple(roar.hasLocation)
+
+    documentedIn = rdfSingle(roar.documentedIn)
 
 
 class Document(Entity):
@@ -80,6 +102,8 @@ class Document(Entity):
     mentionsRegistered = rdfMultiple(saa.mentionsRegistered)
     mentionsLocation = rdfMultiple(saa.mentionsLocation,
                                    range_type=saa.Location)
+
+    onScan = rdfMultiple(roar.onScan)
 
 
 class Derivation(rdfSubject):
@@ -115,6 +139,12 @@ class Agent(rdfSubject):
 
 class Inventory(rdfSubject):
     notary = rdfMultiple(saa.notary)
+
+
+class StructuredValue(rdfSubject):
+    value = rdfSingle(RDF.value)
+
+    role = rdfSingle(roar.role)
 
 
 ##########
@@ -164,32 +194,33 @@ class Person(Entity):
     address = rdfSingle(schema.address)
     homeLocation = rdfSingle(schema.homeLocation)
 
+
 class PersonObservation(Person):
     rdf_type = roar.PersonObservation
-
-    documentedIn = rdfSingle(roar.documentedIn)
 
 
 class PersonReconstruction(Person):
     rdf_type = roar.PersonReconstruction
 
-    documentedIn = rdfMultiple(roar.documentedIn)
 
 class LocationObservation(Entity):
     rdf_type = roar.LocationObservation
-    
+
     hasPerson = rdfMultiple(roar.hasPerson)
     address = rdfSingle(schema.address)
-    
+
+
 class LocationReconstruction(Entity):
     rdf_type = roar.LocationReconstruction
 
+
 class PostalAddress(rdfSubject):
     rdf_type = schema.PostalAddress
-    
+
     streetAddress = rdfSingle(schema.streetAddress)
     addressRegion = rdfSingle(schema.addressRegion)
     postalCode = rdfSingle(schema.postalCode)
+
 
 class PersonName(rdfSubject):
     rdf_type = pnv.PersonName
@@ -218,6 +249,15 @@ class PersonName(rdfSubject):
 
 class Occupation(rdfSubject):
     rdf_type = schema.Occupation
+    label = rdfMultiple(RDFS.label)
+    name = rdfMultiple(schema.name)
+
+    occupationalCategory = rdfMultiple(schema.occupationalCategory,
+                                       range_type=schema.CategoryCode)
+
+
+class OccupationObservation(Entity):
+    rdf_type = schema.OccupationObservation
     label = rdfMultiple(RDFS.label)
     name = rdfMultiple(schema.name)
 

@@ -114,16 +114,26 @@ def parsexml(xmlfile):
     _, indexName = root.rsplit(os.sep)
 
     xmlfile = os.path.join(root, f)
-    
-    if not xmlfile.endswith('SAA_Index_op_bevolkingsregister_1874-1893_20181005_010.xml'):
+
+    if not xmlfile.endswith(
+            'SAA_Index_op_bevolkingsregister_1851-1853_20181004_001.xml'):
         return
 
     targetfile = os.path.join(trigfolder, indexName,
                               f.replace('.xml', '.trig'))
 
     ds = Dataset()
+    ds_void = VoidDataset(ds,
+                          title="Archief van het Bevolkingsregister",
+                          label=["Archief van het Bevolkingsregister"])
 
     g = rdfSubject.db = ds.graph(identifier=create.term(indexName))
+    g_void = VoidDataset(create.term(indexName),
+                         title=indexName,
+                         description=f"RDF conversion of {indexName}",
+                         label=[f"RDF conversion of {indexName}"])
+
+    ds_void.subset = [g_void]
 
     # Bind prefixes
     ds.bind('saa', saa)
@@ -140,6 +150,7 @@ def parsexml(xmlfile):
     ds.bind('skos', skos)
     ds.bind('roar', roar)
     ds.bind('prov', prov)
+    ds.bind('void', void)
 
     # Read the file
     with open(xmlfile, 'rb') as xmlrbfile:
@@ -165,19 +176,32 @@ def parsexml(xmlfile):
                 inventoryNumber=record['inventarisnummer'],
                 sourceReference=record['bronverwijzing'],
                 description=Literal(record['overigeGegevens'], lang='nl')
-                if record['overigeGegevens'] is not None else None)
+                if record['overigeGegevens'] is not None else None,
+                inDataset=g_void)
 
             pn = getPersonName(record['naam'])
 
+            if record['geboorteplaats']:
+                place = LocationObservation(saaLocation.term(
+                    str(
+                        uuid.uuid5(uuid.NAMESPACE_OID,
+                                   record['geboorteplaats']))),
+                                            label=[record['geboorteplaats']],
+                                            documentedIn=r,
+                                            inDataset=g_void)
+            else:
+                place = None
+
             birth = Birth(
                 None,
-                place=record['geboorteplaats'],
+                place=place,
                 hasTimeStamp=Literal(record['geboortedatum'],
                                      datatype=XSD.datetime)
                 if record['geboortedatum'] is not None else None,
                 label=[Literal(f"Geboorte van {pn.label}", lang='nl')])
 
-            address = record['straatMetKleinnummer'] or record['adres']
+            address = record['straatMetKleinnummer'] or record[
+                'adres'] or record['straatnaamInBron']
 
             p = PersonObservation(saaPerson.term(record['@id']),
                                   hasName=[pn],
@@ -186,7 +210,7 @@ def parsexml(xmlfile):
                                   birthDate=birth.hasTimeStamp,
                                   birthPlace=birth.place,
                                   documentedIn=r,
-                                  address=address)  # homeLocation?
+                                  inDataset=g_void)  # homeLocation?
 
             loc = LocationObservation(
                 saaLocation.term(record['@id']),
@@ -194,20 +218,29 @@ def parsexml(xmlfile):
                                       streetAddress=address,
                                       addressRegion=record['buurtcode'],
                                       postalCode=record['buurtnummer']),
-            )
+                label=[address] if address else ["Unknown"],
+                documentedIn=r,
+                inDataset=g_void)
 
             p.homeLocation = loc
 
-            loc.hasPerson = [p]
+            loc.hasPerson = [StructuredValue(value=p, role="resident")]
+
+            if place:
+                p.hasLocation = [
+                    StructuredValue(value=place, role="birth place")
+                ]
 
             if record['beroep']:
 
                 identifier = str(
                     uuid.uuid5(uuid.NAMESPACE_OID, record['beroep']))
 
-                occupation = Occupation(
+                occupation = OccupationObservation(
                     saaOccupation.term(identifier),
-                    label=[Literal(record['beroep'], lang='nl')])
+                    label=[Literal(record['beroep'], lang='nl')],
+                    documentedIn=r,
+                    inDataset=g_void)
                 p.hasOccupation = [occupation]
 
             birth.principal = p
@@ -228,8 +261,7 @@ def parsexml(xmlfile):
             elif record['urlScan'] is not None:
                 r.urlScan = [URIRef(record['urlScan'])]
 
-            # A bit of prov
-            r.wasDerivedFrom = r.urlScan
+            r.onScan = r.urlScan  # already a list
 
         print(f"Writing the graph to: {targetfile}")
         sys.stdout.flush()
