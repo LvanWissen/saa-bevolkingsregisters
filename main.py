@@ -152,6 +152,25 @@ def parsexml(xmlfile):
     ds.bind('prov', prov)
     ds.bind('void', void)
 
+    if '1851-1853' in indexName:
+        earliestBeginTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
+        LatestBeginTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
+
+        earliestEndTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
+        latestEndTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
+    elif '1853-1863' in indexName:
+        earliestBeginTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
+        LatestBeginTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
+
+        earliestEndTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
+        latestEndTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
+    elif '1874-1893' in indexName:
+        earliestBeginTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
+        LatestBeginTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
+
+        earliestEndTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
+        latestEndTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
+
     # Read the file
     with open(xmlfile, 'rb') as xmlrbfile:
 
@@ -224,12 +243,31 @@ def parsexml(xmlfile):
 
             p.homeLocation = loc
 
-            loc.hasPerson = [StructuredValue(value=p, role="resident")]
+            loc.hasPerson = [
+                StructuredValue(
+                    value=p,
+                    role="resident",
+                    hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
+                    hasLatestBeginTimeStamp=latestEndTimeStamp,
+                    hasEarliestEndTimeStamp=earliestEndTimeStamp,
+                    hasLatestEndTimeStamp=latestEndTimeStamp)
+            ]
+
+            homeLocation = StructuredValue(
+                value=loc,
+                role="home location",
+                hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
+                hasLatestBeginTimeStamp=latestEndTimeStamp,
+                hasEarliestEndTimeStamp=earliestEndTimeStamp,
+                hasLatestEndTimeStamp=latestEndTimeStamp)
 
             if place:
                 p.hasLocation = [
-                    StructuredValue(value=place, role="birth place")
+                    StructuredValue(value=place, role="birthplace"),
+                    homeLocation
                 ]
+            else:
+                p.hasLocation = [homeLocation]
 
             if record['beroep']:
 
@@ -249,8 +287,7 @@ def parsexml(xmlfile):
                      value=p,
                      label=p.label,
                      roleType=RoleType(saaRole.term(
-                         saaRole.term(
-                             str(uuid.uuid5(uuid.NAMESPACE_OID, 'born')))),
+                         str(uuid.uuid5(uuid.NAMESPACE_OID, 'born'))),
                                        label=['Born']))
             ]
 

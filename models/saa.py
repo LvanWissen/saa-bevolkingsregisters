@@ -10,6 +10,7 @@ from rdfalchemy.rdfSubject import rdfSubject
 from rdfalchemy import rdfSingle, rdfMultiple, rdfContainer, rdfList
 
 bio = Namespace("http://purl.org/vocab/bio/0.1/")
+sem = Namespace("http://semanticweb.cs.vu.nl/2009/11/sem/")
 rel = Namespace("http://purl.org/vocab/relationship/")
 pnv = Namespace('https://w3id.org/pnv#')
 skos = Namespace('http://www.w3.org/2004/02/skos/core#')
@@ -145,6 +146,14 @@ class StructuredValue(rdfSubject):
     value = rdfSingle(RDF.value)
 
     role = rdfSingle(roar.role)
+
+    hasTimeStamp = rdfSingle(sem.hasTimeStamp)
+    hasBeginTimeStamp = rdfSingle(sem.hasBeginTimeStamp)
+    hasEndTimeStamp = rdfSingle(sem.hasEndTimeStamp)
+    hasEarliestBeginTimeStamp = rdfSingle(sem.hasEarliestBeginTimeStamp)
+    hasLatestBeginTimeStamp = rdfSingle(sem.hasLatestBeginTimeStamp)
+    hasEarliestEndTimeStamp = rdfSingle(sem.hasEarliestEndTimeStamp)
+    hasLatestEndTimeStamp = rdfSingle(sem.hasLatestEndTimeStamp)
 
 
 ##########
