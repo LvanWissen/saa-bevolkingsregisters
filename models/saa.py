@@ -155,6 +155,7 @@ class StructuredValue(rdfSubject):
     hasEarliestEndTimeStamp = rdfSingle(sem.hasEarliestEndTimeStamp)
     hasLatestEndTimeStamp = rdfSingle(sem.hasLatestEndTimeStamp)
 
+    label = rdfMultiple(RDFS.label)
 
 ##########
 # Person #
@@ -266,7 +267,7 @@ class Occupation(rdfSubject):
 
 
 class OccupationObservation(Entity):
-    rdf_type = schema.OccupationObservation
+    rdf_type = roar.OccupationObservation
     label = rdfMultiple(RDFS.label)
     name = rdfMultiple(schema.name)
 
