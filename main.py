@@ -253,9 +253,16 @@ def parsexml(xmlfile):
                 if record['geboortedatum'] is not None else None,
                 label=[Literal(f"Geboorte van {pn.label}", lang='nl')])
 
-            address = record['straatMetKleinnummer'] or record[
-                'adres'] or record['straatnaamInBron'] or record[
-                    'buurtnummer'] or record['buurtnummer']
+            if record['huisnummertoevoeging'] and record['adres']:
+                disambiguatingAddress = record['adres'] + record[
+                    'huisnummertoevoeging']
+            else:
+                disambiguatingAddress = None
+
+            address = record[
+                'straatMetKleinnummer'] or disambiguatingAddress or record[
+                    'adres'] or record['straatnaamInBron'] or record[
+                        'buurtnummer'] or record['buurtnummer']
 
             p = PersonObservation(saaPerson.term(record['@id']),
                                   hasName=[pn],
@@ -274,7 +281,9 @@ def parsexml(xmlfile):
                     address=PostalAddress(BNode(identifier),
                                           streetAddress=address,
                                           addressRegion=record['buurtcode'],
-                                          postalCode=record['buurtnummer']),
+                                          postalCode=record['buurtnummer'],
+                                          disambiguatingDescription=record[
+                                              'huisnummertoevoeging']),
                     label=[address] if address else ["Unknown"],
                     documentedIn=r,
                     inDataset=g_void)

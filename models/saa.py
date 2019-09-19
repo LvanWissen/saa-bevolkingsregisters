@@ -242,6 +242,7 @@ class PostalAddress(rdfSubject):
     streetAddress = rdfSingle(schema.streetAddress)
     addressRegion = rdfSingle(schema.addressRegion)
     postalCode = rdfSingle(schema.postalCode)
+    disambiguatingDescription = rdfSingle(schema.disambiguatingDescription)
 
 
 class PersonName(rdfSubject):
