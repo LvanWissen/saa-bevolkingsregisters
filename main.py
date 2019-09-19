@@ -87,14 +87,6 @@ def xml2rdf(datafolder, trigfolder):
             _, indexName = root.rsplit(os.sep)
             os.makedirs(os.path.join(trigfolder, indexName), exist_ok=True)
 
-    # with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-    # with multiprocessing.Pool(processes=6) as pool:
-    #     _ = pool.map(parsexml, xmlfiles)
-
-    # for f in sorted(xmlfiles):
-    #     parsexml(f)
-
-    # with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
     with multiprocessing.Pool(processes=2) as pool:
         _ = pool.map(parsexml, xmlfiles)
 
@@ -227,6 +219,7 @@ def parsexml(xmlfile):
                 mentionsNeighbourhoodCode=record['buurtcode'],
                 mentionsNeihbourhoodNumber=record['buurtnummer'],
                 mentionsStreetKlein=record['straatMetKleinnummer'],
+                mentionsStreetExtra=record['huisnummertoevoeging'],
                 mentionsOccupation=record['beroep'],
                 description=Literal(record['overigeGegevens'], lang='nl')
                 if record['overigeGegevens'] is not None else None,
@@ -253,9 +246,9 @@ def parsexml(xmlfile):
                 if record['geboortedatum'] is not None else None,
                 label=[Literal(f"Geboorte van {pn.label}", lang='nl')])
 
+            # need a unique entry for the adres
             if record['huisnummertoevoeging'] and record['adres']:
-                disambiguatingAddress = record['adres'] + record[
-                    'huisnummertoevoeging']
+                disambiguatingAddress = f"{record['adres']} {record['huisnummertoevoeging']}"
             else:
                 disambiguatingAddress = None
 

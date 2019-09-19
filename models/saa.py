@@ -113,6 +113,7 @@ class Document(Entity):
     mentionsNeighbourhoodCode = rdfSingle(saa.mentionsNeighbourhoodCode)
     mentionsNeihbourhoodNumber = rdfSingle(saa.mentionsNeihbourhoodNumber)
     mentionsStreetKlein = rdfSingle(saa.mentionsStreetKlein)
+    mentionsStreetExtra = rdfSingle(saa.mentionsStreetExtra)
     mentionsOccupation = rdfSingle(saa.mentionsOccupation)
 
     onScan = rdfMultiple(roar.onScan)
