@@ -9,7 +9,6 @@ pip install git+https://github.com/LvanWissen/RDFAlchemy.git
 
 Questions:
     Leon van Wissen (l.vanwissen@uva.nl)
-    Golden Agents (www.goldenagents.org)
 
 """
 import os
@@ -33,8 +32,6 @@ import multiprocessing
 from models.bio import *
 from models.saa import *
 
-create = Namespace(
-    "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/")
 dc = Namespace("http://purl.org/dc/elements/1.1/")
 dcterms = Namespace("http://purl.org/dc/terms/")
 
@@ -43,7 +40,7 @@ oa = Namespace("http://www.w3.org/ns/oa#")
 foaf = Namespace("http://xmlns.com/foaf/0.1/")
 
 import rdflib.graph
-rdflib.graph.DATASET_DEFAULT_GRAPH_ID = create
+rdflib.graph.DATASET_DEFAULT_GRAPH_ID = br
 
 
 def defaultify(d, defaultdict_type=None):
@@ -125,11 +122,11 @@ def parsexml(xmlfile):
     ds = Dataset()
 
     # The graph
-    ds.add((create.term(indexName), RDF.type, void.Dataset))
-    ds.add((create.term(indexName), dcterms.title, Literal(indexName)))
-    ds.add((create.term(indexName), dcterms.modified,
+    ds.add((br.term(indexName), RDF.type, void.Dataset))
+    ds.add((br.term(indexName), dcterms.title, Literal(indexName)))
+    ds.add((br.term(indexName), dcterms.modified,
             Literal(datetime.now().strftime('%Y-%m-%d'), datatype=XSD.date)))
-    ds.add((create.term(indexName), dcterms.description,
+    ds.add((br.term(indexName), dcterms.description,
             Literal(f"RDF conversion of {indexName}")))
 
     # The dataset
@@ -147,24 +144,26 @@ def parsexml(xmlfile):
     # Subset
     ds.add((URIRef(
         "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
-            void.subset, create.term(indexName)))
+            void.subset, br.term(indexName)))
 
     # For backref
-    g_void = create.term(indexName)
+    g_void = br.term(indexName)
 
     # And the graph itself
-    g = rdfSubject.db = ds.graph(identifier=create.term(indexName))
+    g = rdfSubject.db = ds.graph(identifier=br.term(indexName))
 
     # Bind prefixes
-    ds.bind('saa', saa)
-    ds.bind('saaRec', saaRec)
+    ds.bind('br', br)
+    ds.bind('bri', saaRec)
+    ds.bind('brp', saaPerson)
+    ds.bind('saa', saa)  # the ontology
     ds.bind('rdfs', RDFS)
     ds.bind('xsd', XSD)
     ds.bind('pnv', pnv)
     ds.bind('schema', schema)
     ds.bind('dcterms', dcterms)
-    ds.bind('saaPerson', saaPerson)
-    ds.bind('saaLocation', saaLocation)
+    # ds.bind('saaLocation', saaLocation)
+    # ds.bind('saaOccupation', saaOccupation)
     ds.bind('bio', bio)
     ds.bind('sem', sem)
     ds.bind('skos', skos)
@@ -173,23 +172,33 @@ def parsexml(xmlfile):
     ds.bind('void', void)
 
     if '1851-1853' in indexName:
+
         earliestBeginTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
         latestBeginTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
     elif '1853-1863' in indexName:
+
         earliestBeginTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
         latestBeginTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1863-12-31", datatype=XSD.datetime)
     elif '1874-1893' in indexName:
+
         earliestBeginTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
         latestBeginTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
 
         earliestEndTimeStamp = Literal("1874-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1893-12-31", datatype=XSD.datetime)
+
+    saaLocation = Namespace(
+        f"https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Location/{indexName}/"
+    )
+    saaOccupation = Namespace(
+        f"https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Occupation/{indexName}/"
+    )
 
     # Read the file
     with open(xmlfile, 'rb') as xmlrbfile:
@@ -213,7 +222,12 @@ def parsexml(xmlfile):
                 saaRec.term(record['@id']),
                 identifier=record['@id'],
                 inventoryNumber=record['inventarisnummer'],
-                sourceReference=record['bronverwijzing'],
+                mentionsStreet=record['straatnaam'],
+                mentionsOriginalStreet=record['straatnaamInBron'],
+                mentionsNeighbourhoodCode=record['buurtcode'],
+                mentionsNeihbourhoodNumber=record['buurtnummer'],
+                mentionsStreetKlein=record['straatMetKleinnummer'],
+                mentionsOccupation=record['beroep'],
                 description=Literal(record['overigeGegevens'], lang='nl')
                 if record['overigeGegevens'] is not None else None,
                 inDataset=g_void)
@@ -240,7 +254,8 @@ def parsexml(xmlfile):
                 label=[Literal(f"Geboorte van {pn.label}", lang='nl')])
 
             address = record['straatMetKleinnummer'] or record[
-                'adres'] or record['straatnaamInBron']
+                'adres'] or record['straatnaamInBron'] or record[
+                    'buurtnummer'] or record['buurtnummer']
 
             p = PersonObservation(saaPerson.term(record['@id']),
                                   hasName=[pn],
@@ -251,45 +266,57 @@ def parsexml(xmlfile):
                                   documentedIn=r,
                                   inDataset=g_void)  # homeLocation?
 
-            loc = LocationObservation(
-                saaLocation.term(record['@id']),
-                address=PostalAddress(None,
-                                      streetAddress=address,
-                                      addressRegion=record['buurtcode'],
-                                      postalCode=record['buurtnummer']),
-                label=[address] if address else ["Unknown"],
-                documentedIn=r,
-                inDataset=g_void)
+            if address:
+                identifier = str(uuid.uuid5(uuid.NAMESPACE_OID, address))
 
-            p.homeLocation = loc
+                loc = LocationObservation(
+                    saaLocation.term(identifier),
+                    address=PostalAddress(BNode(identifier),
+                                          streetAddress=address,
+                                          addressRegion=record['buurtcode'],
+                                          postalCode=record['buurtnummer']),
+                    label=[address] if address else ["Unknown"],
+                    documentedIn=r,
+                    inDataset=g_void)
 
-            loc.hasPerson = [
-                StructuredValue(
-                    value=p,
-                    role="resident",
+                p.homeLocation = loc
+
+                loc.hasPerson = [
+                    StructuredValue(
+                        value=p,
+                        role="resident",
+                        hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
+                        hasLatestBeginTimeStamp=latestBeginTimeStamp,
+                        hasEarliestEndTimeStamp=earliestEndTimeStamp,
+                        hasLatestEndTimeStamp=latestEndTimeStamp,
+                        label=p.label)
+                ]
+
+                homeLocation = StructuredValue(
+                    value=loc,
+                    role="home location",
                     hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
                     hasLatestBeginTimeStamp=latestBeginTimeStamp,
                     hasEarliestEndTimeStamp=earliestEndTimeStamp,
-                    hasLatestEndTimeStamp=latestEndTimeStamp)
-            ]
-
-            homeLocation = StructuredValue(
-                value=loc,
-                role="home location",
-                hasEarliestBeginTimeStamp=earliestBeginTimeStamp,
-                hasLatestBeginTimeStamp=latestBeginTimeStamp,
-                hasEarliestEndTimeStamp=earliestEndTimeStamp,
-                hasLatestEndTimeStamp=latestEndTimeStamp)
+                    hasLatestEndTimeStamp=latestEndTimeStamp,
+                    label=loc.label)
+            else:
+                homeLocation = None
 
             if place:
-                p.hasLocation = [
-                    StructuredValue(value=place,
-                                    role="birthplace",
-                                    hasTimeStamp=birth.hasTimeStamp),
-                    homeLocation
-                ]
+                birthPlace = StructuredValue(value=place,
+                                             role="birthplace",
+                                             hasTimeStamp=birth.hasTimeStamp,
+                                             label=place.label)
             else:
+                birthPlace = None
+
+            if birthPlace and homeLocation:
+                p.hasLocation = [birthPlace, homeLocation]
+            elif homeLocation:
                 p.hasLocation = [homeLocation]
+            elif place:
+                p.hasLocation = [birthPlace]
 
             if record['beroep']:
 

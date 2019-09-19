@@ -28,8 +28,12 @@ prov = Namespace("http://www.w3.org/ns/prov#")
 
 roar = Namespace("https://w3id.org/roar#")
 
-saa = Namespace(
+br = Namespace(
     "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/")
+
+saa = Namespace(
+    "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/ontology/"
+)
 saaRec = Namespace(
     "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Index/"
 )
@@ -104,6 +108,13 @@ class Document(Entity):
     mentionsLocation = rdfMultiple(saa.mentionsLocation,
                                    range_type=saa.Location)
 
+    mentionsStreet = rdfSingle(saa.mentionsStreet)
+    mentionsOriginalStreet = rdfSingle(saa.mentionsOriginalStreet)
+    mentionsNeighbourhoodCode = rdfSingle(saa.mentionsNeighbourhoodCode)
+    mentionsNeihbourhoodNumber = rdfSingle(saa.mentionsNeihbourhoodNumber)
+    mentionsStreetKlein = rdfSingle(saa.mentionsStreetKlein)
+    mentionsOccupation = rdfSingle(saa.mentionsOccupation)
+
     onScan = rdfMultiple(roar.onScan)
 
 
@@ -156,6 +167,7 @@ class StructuredValue(rdfSubject):
     hasLatestEndTimeStamp = rdfSingle(sem.hasLatestEndTimeStamp)
 
     label = rdfMultiple(RDFS.label)
+
 
 ##########
 # Person #
