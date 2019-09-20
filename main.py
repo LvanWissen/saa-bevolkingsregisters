@@ -271,12 +271,14 @@ def parsexml(xmlfile):
 
                 loc = LocationObservation(
                     saaLocation.term(identifier),
-                    address=PostalAddress(BNode(identifier),
-                                          streetAddress=address,
-                                          addressRegion=record['buurtcode'],
-                                          postalCode=record['buurtnummer'],
-                                          disambiguatingDescription=record[
-                                              'huisnummertoevoeging']),
+                    address=PostalAddress(
+                        BNode(identifier),
+                        streetAddress=address,
+                        addressRegion=record['buurtcode'],
+                        postalCode=record['buurtnummer'],
+                        disambiguatingDescription=record[
+                            'huisnummertoevoeging'],
+                        label=[address] if address else None),
                     label=[address] if address else ["Unknown"],
                     documentedIn=r,
                     inDataset=g_void)
