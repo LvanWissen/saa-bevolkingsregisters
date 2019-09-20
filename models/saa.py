@@ -89,6 +89,8 @@ class Entity(rdfSubject):
 
     documentedIn = rdfSingle(roar.documentedIn)
 
+    identifier = rdfSingle(schema.identifier)
+
 
 class Document(Entity):
     rdf_type = roar.Document
@@ -108,6 +110,7 @@ class Document(Entity):
     mentionsLocation = rdfMultiple(saa.mentionsLocation,
                                    range_type=saa.Location)
 
+    mentionsAddress = rdfSingle(saa.mentionsAddress)
     mentionsStreet = rdfSingle(saa.mentionsStreet)
     mentionsOriginalStreet = rdfSingle(saa.mentionsOriginalStreet)
     mentionsNeighbourhoodCode = rdfSingle(saa.mentionsNeighbourhoodCode)
@@ -231,6 +234,8 @@ class LocationObservation(Entity):
 
     hasPerson = rdfMultiple(roar.hasPerson)
     address = rdfSingle(schema.address)
+
+    geoWithin = rdfSingle(schema.geoWithin)
 
 
 class LocationReconstruction(Entity):

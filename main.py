@@ -111,6 +111,10 @@ def parsexml(xmlfile):
     targetfile = os.path.join(trigfolder, indexName,
                               f.replace('.xml', '.trig'))
 
+    # Other data (e.g. Adamlink)
+    with open('resources/adamlink_neighbourhoods.json') as infile:
+        buurt2adamlink = json.load(infile)
+
     ds = Dataset()
 
     # The graph
@@ -137,6 +141,9 @@ def parsexml(xmlfile):
     ds.add((URIRef(
         "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters"),
             void.subset, br.term(indexName)))
+
+    # bit of prov
+    ds.add((br.term(indexName), prov.wasDerivedFrom, Literal(f)))
 
     # For backref
     g_void = br.term(indexName)
@@ -188,6 +195,11 @@ def parsexml(xmlfile):
     saaLocation = Namespace(
         f"https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Location/{indexName}/"
     )
+
+    saaAddress = Namespace(
+        f"https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Address/{indexName}/"
+    )
+
     saaOccupation = Namespace(
         f"https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Occupation/{indexName}/"
     )
@@ -214,6 +226,7 @@ def parsexml(xmlfile):
                 saaRec.term(record['@id']),
                 identifier=record['@id'],
                 inventoryNumber=record['inventarisnummer'],
+                mentionsAddress=record['adres'],
                 mentionsStreet=record['straatnaam'],
                 mentionsOriginalStreet=record['straatnaamInBron'],
                 mentionsNeighbourhoodCode=record['buurtcode'],
@@ -258,6 +271,8 @@ def parsexml(xmlfile):
                         'buurtnummer'] or record['buurtnummer']
 
             p = PersonObservation(saaPerson.term(record['@id']),
+                                  identifier=int(
+                                      record['@id'].replace('saaId')),
                                   hasName=[pn],
                                   label=[pn.label],
                                   birth=birth,
@@ -272,7 +287,7 @@ def parsexml(xmlfile):
                 loc = LocationObservation(
                     saaLocation.term(identifier),
                     address=PostalAddress(
-                        BNode(identifier),
+                        saaAddress.term(identifier),
                         streetAddress=address,
                         addressRegion=record['buurtcode'],
                         postalCode=record['buurtnummer'],
@@ -304,6 +319,10 @@ def parsexml(xmlfile):
                     hasEarliestEndTimeStamp=earliestEndTimeStamp,
                     hasLatestEndTimeStamp=latestEndTimeStamp,
                     label=loc.label)
+
+                if record['buurtcode']:
+                    loc.geoWithin = URIRef(buurt2adamlink[record['buurtcode']])
+
             else:
                 homeLocation = None
 
@@ -312,6 +331,7 @@ def parsexml(xmlfile):
                                              role="birthplace",
                                              hasTimeStamp=birth.hasTimeStamp,
                                              label=place.label)
+
             else:
                 birthPlace = None
 
