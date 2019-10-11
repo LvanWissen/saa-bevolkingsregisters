@@ -37,8 +37,11 @@ saa = Namespace(
 saaRec = Namespace(
     "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Index/"
 )
-saaPerson = Namespace(
-    "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/Person/"
+saaPersonObservation = Namespace(
+    "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/PersonObservation/"
+)
+saaPersonReconstruction = Namespace(
+    "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/PersonReconstruction/"
 )
 saaPersonName = Namespace(
     "https://data.create.humanities.uva.nl/datasets/bevolkingsregisters/PersonName/"
@@ -242,7 +245,7 @@ class LocationReconstruction(Entity):
     rdf_type = roar.LocationReconstruction
 
 
-class PostalAddress(rdfSubject):
+class PostalAddress(Entity):
     rdf_type = schema.PostalAddress
 
     streetAddress = rdfSingle(schema.streetAddress)
