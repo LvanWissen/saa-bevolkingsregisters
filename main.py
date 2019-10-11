@@ -154,7 +154,7 @@ def parsexml(xmlfile):
     # Bind prefixes
     ds.bind('br', br)
     ds.bind('bri', saaRec)
-    ds.bind('brp', saaPerson)
+    ds.bind('observation', saaPersonObservation)
     ds.bind('saa', saa)  # the ontology
     ds.bind('rdfs', RDFS)
     ds.bind('xsd', XSD)
@@ -177,6 +177,10 @@ def parsexml(xmlfile):
 
         earliestEndTimeStamp = Literal("1851-01-01", datatype=XSD.datetime)
         latestEndTimeStamp = Literal("1853-12-31", datatype=XSD.datetime)
+
+        with open('resources/occupations2hisco.json') as infile:
+            occupations2hisco = json.load(infile)
+
     elif '1853-1863' in indexName:
 
         earliestBeginTimeStamp = Literal("1853-01-01", datatype=XSD.datetime)
@@ -270,16 +274,16 @@ def parsexml(xmlfile):
                     'adres'] or record['straatnaamInBron'] or record[
                         'buurtnummer'] or record['buurtnummer']
 
-            p = PersonObservation(saaPerson.term(record['@id']),
-                                  identifier=int(
-                                      record['@id'].replace('saaId')),
-                                  hasName=[pn],
-                                  label=[pn.label],
-                                  birth=birth,
-                                  birthDate=birth.hasTimeStamp,
-                                  birthPlace=birth.place,
-                                  documentedIn=r,
-                                  inDataset=g_void)  # homeLocation?
+            p = PersonObservation(
+                saaPersonObservation.term(record['@id']),
+                #identifier=int(record['@id'].replace('saaId')),
+                hasName=[pn],
+                label=[pn.label],
+                birth=birth,
+                birthDate=birth.hasTimeStamp,
+                birthPlace=birth.place,
+                documentedIn=r,
+                inDataset=g_void)  # homeLocation?
 
             if address:
                 identifier = str(uuid.uuid5(uuid.NAMESPACE_OID, address))
@@ -347,11 +351,13 @@ def parsexml(xmlfile):
                 identifier = str(
                     uuid.uuid5(uuid.NAMESPACE_OID, record['beroep']))
 
-                occupation = OccupationObservation(
-                    saaOccupation.term(identifier),
-                    label=[Literal(record['beroep'], lang='nl')],
-                    documentedIn=r,
-                    inDataset=g_void)
+                # Let's try to put a HISCO code already in the Observation [=exact string match]
+                occupation = getOccupation(record['beroep'],
+                                           identifier=identifier,
+                                           record=r,
+                                           dataset=g_void,
+                                           occupations2hisco=occupations2hisco)
+
                 p.hasOccupation = [occupation]
 
             birth.principal = p
@@ -374,6 +380,63 @@ def parsexml(xmlfile):
         print(f"Writing the graph to: {targetfile}")
         sys.stdout.flush()
         ds.serialize(targetfile, format='trig')
+
+
+def getOccupation(occupation, identifier, record, dataset, occupations2hisco):
+    """Lookup the HISCO OccupationalCode for the given string. 
+    
+    It compares on an exact match of the occupation description give in the 
+    source. More work should be done (e.g. fuzzy matching? Further 
+    interpretatin?) in an OccupationReconstruction.
+
+    See: 
+        - https://schema.org/CategoryCode
+        - https://druid.datalegend.net/IISG/HISCO
+    
+    Args:
+        occupation (str): Occupation description from the source
+        identifier (str): uuid generated on the occupation string
+        record (Document): Document object (for backref)
+        dataset (URIRef): Pointer to the void dataset [=graph]
+        occupations2hisco (dict): mapping of occupation to hisco code (cf. schema.org)
+    
+    Returns:
+        OccupationObservation: The mentioned occupation as OccupationObservation.
+    """
+    occupation = occupation.replace('[', '').replace(']', '').lower()
+
+    name = Literal(occupation, lang='nl')
+
+    o = OccupationObservation(saaOccupation.term(identifier),
+                              name=[name],
+                              documentedIn=record,
+                              inDataset=dataset)
+
+    if occupations2hisco[occupation] == []:
+        return o
+
+    categorycodes = []
+    for r in occupations2hisco[occupation]:
+        uri = r['hiscoCategory']['value']
+        code = r['hiscoCode']['value']
+        catname = r['hiscoCategoryName']['value']
+
+        # static
+        codeset = CategoryCodeSet(
+            URIRef("https://iisg.amsterdam/resource/hisco/HISCO"),
+            label=['HISCO'],
+            name=['HISCO'])
+
+        catcode = CategoryCode(URIRef(uri),
+                               codeValue=code,
+                               inCodeSet=codeset,
+                               name=[catname],
+                               label=[catname])
+        categorycodes.append(catcode)
+
+    o.occupationalCategory = categorycodes
+
+    return o
 
 
 def getPersonName(personname, record=None):
